@@ -3,6 +3,8 @@ import { adminDb } from '@/lib/firebaseAdmin';
 import webpush from 'web-push';
 import { getAuth } from 'firebase-admin/auth';
 
+export const runtime = 'nodejs';
+
 export async function POST(request: Request) {
   console.log('[PUSH SUBSCRIBE] === Début de la route POST /api/push/subscribe ===');
   try {

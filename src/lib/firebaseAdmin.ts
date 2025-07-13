@@ -1,15 +1,17 @@
 import { cert, getApps, initializeApp, ServiceAccount } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+const serviceAccountEncoded = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
 
 export let adminDb: ReturnType<typeof getFirestore> | undefined;
 
-if (serviceAccountBase64) {
+if (serviceAccountEncoded) {
   try {
-    const serviceAccount = JSON.parse(
-      Buffer.from(serviceAccountBase64, 'base64').toString('utf8')
-    ) as ServiceAccount;
+    const decoded = serviceAccountEncoded.trim().startsWith('{')
+      ? serviceAccountEncoded
+      : Buffer.from(serviceAccountEncoded, 'base64').toString('utf8');
+
+    const serviceAccount = JSON.parse(decoded) as ServiceAccount;
 
     const adminApp = getApps().length
       ? getApps()[0]
