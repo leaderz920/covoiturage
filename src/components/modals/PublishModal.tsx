@@ -443,6 +443,23 @@ export function PublishModal({ open, onOpenChange, onSubmit, announcementToEdit 
       
       // Afficher une notification de succès
       toast.success(announcementToEdit ? "Annonce mise à jour avec succès" : "Annonce publiée avec succès");
+
+      // Déclencher la notification push uniquement pour une nouvelle annonce
+      if (!announcementToEdit) {
+        try {
+          await fetch('/api/push/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: 'Nouvelle annonce',
+              body: `Une nouvelle annonce a été publiée par ${userData?.displayName || 'un utilisateur'}`,
+              // Ajoute d'autres infos utiles si besoin
+            })
+          });
+        } catch (err) {
+          console.error('Erreur lors de l’envoi de la notification push:', err);
+        }
+      }
       
     } catch (error) {
       console.error("Erreur lors de la soumission du formulaire:", error);
