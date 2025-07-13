@@ -372,21 +372,22 @@ export function PublishModal({ open, onOpenChange, onSubmit, announcementToEdit 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setIsUploading(true);
-      
+      console.log('[PUBLISH] Début de handleSubmit', { values, announcementToEdit });
       // Vérification des jetons pour les nouvelles annonces
       if (!announcementToEdit && !hasEnoughTokens(1)) {
+        console.warn('[PUBLISH] Pas assez de jetons pour publier');
         toast.error("Vous n'avez pas assez de jetons pour publier une annonce");
         return;
       }
-      
       // Gestion de la photo de véhicule pour les conducteurs
       let vehiclePhotoUrl = announcementToEdit?.vehiclePhotoUrl || '';
       if (vehiclePhotoFile && userData?.id) {
+        console.log('[PUBLISH] Upload de la photo du véhicule', vehiclePhotoFile.name);
         const storageRef = ref(storage, `vehicles/${userData.id}/${Date.now()}_${vehiclePhotoFile.name}`);
         await uploadBytes(storageRef, vehiclePhotoFile);
         vehiclePhotoUrl = await getDownloadURL(storageRef);
+        console.log('[PUBLISH] URL de la photo du véhicule obtenue', vehiclePhotoUrl);
       }
-
       // Données communes
       const baseData = {
         ...(announcementToEdit?.id && { id: announcementToEdit.id }), // Ajouter l'ID si édition
@@ -402,7 +403,7 @@ export function PublishModal({ open, onOpenChange, onSubmit, announcementToEdit 
         vehiclePhotoUrl,
         createdAt: announcementToEdit?.createdAt || new Date(),
       };
-
+      console.log('[PUBLISH] baseData', baseData);
       // Données spécifiques au type d'annonce
       const announcementData = {
         ...baseData,
@@ -425,44 +426,49 @@ export function PublishModal({ open, onOpenChange, onSubmit, announcementToEdit 
               price: values.price ? Number(values.price) : 0,
             }),
       };
-
+      console.log('[PUBLISH] announcementData final', announcementData);
       if (onSubmit) {
+        console.log('[PUBLISH] Appel de onSubmit');
         await onSubmit(announcementData);
+        console.log('[PUBLISH] onSubmit terminé');
       }
-
       // Déduire un jeton pour la publication (uniquement pour les nouvelles annonces)
       if (!announcementToEdit) {
+        console.log('[PUBLISH] Déduction d’un jeton');
         await updateTokens(-1);
       }
-
       // Réinitialisation du formulaire
       form.reset();
       setVehiclePhotoPreview(null);
       setVehiclePhotoFile(null);
       onOpenChange(false);
-      
       // Afficher une notification de succès
       toast.success(announcementToEdit ? "Annonce mise à jour avec succès" : "Annonce publiée avec succès");
-
       // Déclencher la notification push uniquement pour une nouvelle annonce
       if (!announcementToEdit) {
         try {
-          await fetch('/api/push/send', {
+          console.log('[PUBLISH] Envoi de la notification push via /api/push/send');
+          const response = await fetch('/api/push/send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               title: 'Nouvelle annonce',
-              body: `Une nouvelle annonce a été publiée par ${userData?.displayName || 'un utilisateur'}`,
-              // Ajoute d'autres infos utiles si besoin
+              body: `Une nouvelle annonce a été publiée par ${userData?.displayName || 'un utilisateur'}`
             })
           });
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[PUBLISH] Erreur API /api/push/send:', response.status, errorText);
+          } else {
+            console.log('[PUBLISH] Notification envoyée avec succès');
+          }
         } catch (err) {
-          console.error('Erreur lors de l’envoi de la notification push:', err);
+          console.error('[PUBLISH] Erreur lors de l’envoi de la notification push:', err);
         }
       }
-      
+      console.log('[PUBLISH] Fin de handleSubmit');
     } catch (error) {
-      console.error("Erreur lors de la soumission du formulaire:", error);
+      console.error('[PUBLISH] Erreur lors de la soumission du formulaire:', error);
       toast.error("Une erreur est survenue lors de la publication de l'annonce");
     } finally {
       setIsUploading(false);

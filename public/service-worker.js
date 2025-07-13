@@ -111,9 +111,8 @@ self.addEventListener('push', (event) => {
         url: data.url || '/'
       }
     };
-    
     event.waitUntil(
-      self.registration.showNotification('EcoTrajet', options)
+      self.registration.showNotification(data.title || 'EcoTrajet', options)
     );
   }
 });
