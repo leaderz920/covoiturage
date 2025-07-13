@@ -1,16 +1,22 @@
 // Service Worker Registration
 export function registerServiceWorker() {
   if ('serviceWorker' in navigator && typeof window !== 'undefined') {
-    window.addEventListener('load', () => {
+    const register = () => {
       navigator.serviceWorker
         .register('/service-worker.js')
         .then(registration => {
           console.log('Service Worker enregistré avec succès:', registration.scope);
         })
         .catch(error => {
-          console.error('Erreur lors de l\'enregistrement du Service Worker:', error);
+          console.error("Erreur lors de l'enregistrement du Service Worker:", error);
         });
-    });
+    };
+
+    if (document.readyState === 'complete') {
+      register();
+    } else {
+      window.addEventListener('load', register);
+    }
   }
 }
 
