@@ -1,0 +1,5 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target" : { "namespace": "android_app", "package_name": "com.ecotrajet.twa",
+               "sha256_cert_fingerprints": ["88:C1:DB:07:70:A7:7D:6F:42:70:C8:CB:A3:A7:C0:55:00:8A:F0:EE:03:20:6D:A6:B5:53:21:29:04:4E:9B:AB"] }
+}]
