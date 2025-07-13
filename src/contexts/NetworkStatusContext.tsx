@@ -49,13 +49,11 @@ export function NetworkStatusProvider({ children }: NetworkStatusProviderProps) 
     return cleanup;
   }, []);
 
-  // Enregistrement du Service Worker et configuration des notifications
+  // Enregistrement du Service Worker uniquement
   useEffect(() => {
     if (typeof window !== 'undefined') {
       import('@/lib/serviceWorkerRegistration').then(async ({ registerServiceWorker }) => {
         registerServiceWorker();
-        const { initPushNotifications } = await import('@/lib/pushNotifications');
-        initPushNotifications();
       });
     }
   }, []);

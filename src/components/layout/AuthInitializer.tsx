@@ -5,6 +5,9 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingScreen } from '../ui/LoadingScreen';
 
+// Import dynamique pour éviter l'exécution côté serveur
+let pushInitDone = false;
+
 interface AuthInitializerProps {
   children: React.ReactNode;
   requireAuth?: boolean;
@@ -39,9 +42,16 @@ export const AuthInitializer = ({
       setIsInitialized(true);
       setIsRedirecting(false);
     }
+    // Initialiser les notifications push uniquement si l'utilisateur est connecté et que ce n'est pas déjà fait
+    if (!loading && currentUser && typeof window !== 'undefined' && !pushInitDone) {
+      pushInitDone = true;
+      import('@/lib/pushNotifications').then(({ initPushNotifications }) => {
+        initPushNotifications();
+      });
+    }
   }, [loading, currentUser, requireAuth, redirectTo, router, pathname]);
 
-  // Afficher un écran de chargement pendant la vérification si demandé
+  // Toujours attendre que l'auth soit initialisée avant de rendre les enfants
   if (loading || !isInitialized || isRedirecting) {
     return showLoadingScreen ? (
       <LoadingScreen message={loadingMessage} />
@@ -52,11 +62,16 @@ export const AuthInitializer = ({
     );
   }
 
-  // Ne rien afficher pendant la redirection
+  // Ne rien afficher pendant la redirection ou si requireAuth et pas d'utilisateur
   if (requireAuth && !currentUser) {
     return null;
   }
 
-  // Si tout est bon, afficher les enfants
-  return <>{children}</>;
+  // Si tout est bon, afficher les enfants (toujours après init)
+  if (!loading && isInitialized) {
+    return <>{children}</>;
+  }
+
+  // Sécurité : fallback
+  return null;
 };
