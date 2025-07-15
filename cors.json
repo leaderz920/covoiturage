@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:52210", "http://127.0.0.1:52210", "http://localhost:*", "http://127.0.0.1:*", "https://trae-33588.web.app", "https://ecotrajet-app.windsurf.build"],
+    "method": ["GET", "PUT", "POST", "DELETE", "HEAD", "OPTIONS"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "Content-Disposition", "Content-Length", "Authorization", "X-Requested-With", "Origin", "Accept"]
+  }
+]

@@ -1,0 +1,58 @@
+{
+  "name": "EcoTrajet",
+  "short_name": "EcoTrajet",
+  "description": "Application mobile de covoiturage avec fonctionnalités hors ligne",
+  "start_url": "/?source=pwa",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#3b82f6",
+  "theme_color": "#3b82f6",
+  "prefer_related_applications": false,
+  "categories": ["transport", "travel"],
+  "scope": "/",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "/EcoTrajet_Icon_500x500.png",
+      "sizes": "500x500 192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Rechercher un trajet",
+      "short_name": "Rechercher",
+      "description": "Rechercher un trajet",
+      "url": "/?modal=search",
+      "icons": [{ "src": "/EcoTrajet_Icon_500x500.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Publier une annonce",
+      "short_name": "Publier",
+      "description": "Créer une nouvelle annonce",
+      "url": "/?modal=publish",
+      "icons": [{ "src": "/EcoTrajet_Icon_500x500.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mes annonces",
+      "short_name": "Mes annonces",
+      "description": "Voir mes annonces",
+      "url": "/?modal=myAnnouncements",
+      "icons": [{ "src": "/EcoTrajet_Icon_500x500.png", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [],
+  "screenshots": [
+    {
+      "src": "/screenshots/home.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg"
+    }
+  ],
+  "serviceworker": {
+    "src": "/service-worker.js",
+    "scope": "/",
+    "update_via_cache": "none"
+  }
+}
