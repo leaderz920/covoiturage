@@ -9,7 +9,9 @@ export let adminMessaging: ReturnType<typeof getMessaging> | undefined;
 
 if (serviceAccountEncoded) {
   try {
-    const decoded = Buffer.from(serviceAccountEncoded, 'base64').toString('utf8');
+    // Nettoyer la chaîne Base64 en supprimant les espaces et caractères non-ASCII
+    const cleanBase64 = serviceAccountEncoded.replace(/[^\w+/=]/g, '');
+    const decoded = Buffer.from(cleanBase64, 'base64').toString('utf8');
     const serviceAccount = JSON.parse(decoded) as ServiceAccount;
 
     const adminApp = getApps().length
