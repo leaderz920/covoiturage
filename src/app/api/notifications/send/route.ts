@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
+import { adminDb, initializeFirebaseAdmin } from '@/lib/firebaseAdmin';
 import NotificationService from '@/services/notificationService';
 import { AnnouncementType } from '@/types';
 
