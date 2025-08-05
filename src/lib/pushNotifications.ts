@@ -130,10 +130,10 @@ async function createPushSubscription(registration: ServiceWorkerRegistration): 
   }
 }
 
-// Envoi de l\'abonnement au serveur
+// Envoi de l'abonnement au serveur
 async function sendSubscriptionToServer(subscription: PushSubscription, userId?: string): Promise<boolean> {
   try {
-    const subscriptionData: NotificationSubscription = {
+    const subscriptionData = {
       endpoint: subscription.endpoint,
       keys: {
         p256dh: subscription.getKey('p256dh') ? 
@@ -141,26 +141,23 @@ async function sendSubscriptionToServer(subscription: PushSubscription, userId?:
         auth: subscription.getKey('auth') ? 
           btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(subscription.getKey('auth')!)))) : ''
       },
-      userId,
-      createdAt: new Date(),
-      lastUsed: new Date()
+      userId: userId,
     };
 
     const response = await fetch('/api/push/subscribe', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        ...(userId && { 'Authorization': `Bearer ${userId}` })
       },
       body: JSON.stringify(subscriptionData),
     });
 
     if (response.ok) {
-      console.log('[PUSH] Abonnement envoye avec succes au serveur');
+      console.log('[PUSH] Abonnement envoyé avec succès au serveur');
       return true;
     } else {
-      const errorText = await response.text();
-      console.error('[PUSH] Erreur serveur:', response.status, errorText);
+      const errorData = await response.json();
+      console.error('[PUSH] Erreur serveur lors de l\'abonnement:', errorData.message);
       return false;
     }
   } catch (error) {
