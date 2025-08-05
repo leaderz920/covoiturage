@@ -28,43 +28,24 @@ import { notifyNewAnnouncement, notifyPublishSuccess } from '@/lib/localNotifica
 const COLLECTION_NAME = 'announcements';
 
 // Créer une nouvelle annonce avec vérification de connectivité
-export const createAnnouncement = async (announcement: Omit<AnnouncementType, 'id' | 'createdAt'>) => {
+export const createAnnouncement = async (announcement: Omit<AnnouncementType, 'id' | 'createdAt'>): Promise<string> => {
   try {
-    // Vérifier la connectivité
-    if (!isOnline()) {
-      throw new Error('Impossible de créer une annonce en mode hors ligne. Veuillez vous connecter à internet.');
-    }
-    
     // S'assurer que l'ID utilisateur est présent
     if (!announcement.userId && auth.currentUser) {
-      console.log('[FIRESTORE DEBUG] Ajout automatique de l\'ID utilisateur:', auth.currentUser.uid);
       announcement.userId = auth.currentUser.uid;
-      
-      // Ajouter également le nom d'utilisateur et la photo si disponibles
       if (!announcement.userName && auth.currentUser.displayName) {
         announcement.userName = auth.currentUser.displayName;
       }
-      
       if (!announcement.userPhoto && auth.currentUser.photoURL) {
         announcement.userPhoto = auth.currentUser.photoURL;
       }
     }
-    
+
     if (!announcement.userId) {
-      console.error('[FIRESTORE DEBUG] ERREUR: Tentative de création d\'annonce sans ID utilisateur!');
+      throw new Error('Tentative de création d\'annonce sans ID utilisateur!');
     }
     
-    // Log pour le débogage des champs de véhicule
-    console.log('[FIRESTORE DEBUG] Données d\'annonce avant création:', JSON.stringify(announcement));
-    console.log('[FIRESTORE DEBUG] Photo du véhicule présente:', !!announcement.vehiclePhoto);
-    console.log('[FIRESTORE DEBUG] ID utilisateur inclus:', announcement.userId);
-    console.log('[FIRESTORE DEBUG] Infos supplémentaires présentes:', !!announcement.additionalInfo);
-    console.log('[FIRESTORE DEBUG] Contenu des infos supplémentaires:', announcement.additionalInfo);
-    
-    // Créer une copie de l'annonce pour la nettoyer
     const cleanedAnnouncement = { ...announcement };
-    
-    // Supprimer le champ additionalInfo s'il est vide ou undefined
     if (cleanedAnnouncement.additionalInfo === undefined || cleanedAnnouncement.additionalInfo === '') {
       delete cleanedAnnouncement.additionalInfo;
     }
@@ -74,61 +55,11 @@ export const createAnnouncement = async (announcement: Omit<AnnouncementType, 'i
       createdAt: serverTimestamp()
     });
     
-    // Log pour confirmation de la création
-    console.log('[FIRESTORE DEBUG] Annonce créée avec ID:', docRef.id);
+    console.log('[FIRESTORE] Annonce créée avec ID:', docRef.id);
     
-    // 🚀 NOTIFICATIONS LOCALES DIRECTES (sans serveur)
-    // Important: les notifications ne doivent jamais bloquer la création d'annonce
-    setTimeout(async () => {
-      try {
-        console.log('[NOTIFICATION] Déclenchement notifications locales pour nouvelle annonce:', docRef.id);
-        
-        // Notification de succès de publication pour l'utilisateur
-        await notifyPublishSuccess({
-          type: announcement.type,
-          from: announcement.from,
-          to: announcement.to
-        });
-        
-        // Notification générale pour informer qu'une nouvelle annonce est disponible
-        await notifyNewAnnouncement({
-          id: docRef.id,
-          type: announcement.type,
-          from: announcement.from,
-          to: announcement.to,
-          userName: announcement.userName || 'Un utilisateur'
-        });
-        
-        console.log('[NOTIFICATION] Notifications locales envoyées avec succès');
-      } catch (notificationError) {
-        console.warn('[NOTIFICATION] Erreur lors de l\'affichage des notifications locales:', notificationError);
-        // Non bloquant - l'annonce est créée même si la notification échoue
-      }
-    }, 100); // Délai de 100ms pour éviter que les notifications bloquent le processus principal
-    
-    // Mettre à jour les jetons de l'utilisateur
-    // Cette opération devrait normalement être effectuée dans une fonction Cloud
-    
-    // Récupérer le document fraichement créé pour avoir toutes les données (incluant les timestamp)
-    let newDocSnapshot;
-    try {
-      newDocSnapshot = await getDocFromCache(docRef);
-      console.log('[FIRESTORE DEBUG] Document récupéré depuis le cache');
-    } catch (error) {
-      newDocSnapshot = await getDoc(docRef);
-      console.log('[FIRESTORE DEBUG] Document récupéré depuis le serveur');
-    }
-    
-    if (!newDocSnapshot.exists()) {
-      throw new Error('Le document nouvellement créé n\'a pas pu être récupéré');
-    }
-    
-    // Retourner l'objet complet plutôt que seulement l'ID
-    return {
-      id: docRef.id,
-      ...newDocSnapshot.data(),
-      ...announcement // Assurer que toutes les données sont présentes, même si serverTimestamp n'est pas encore résolu
-    } as AnnouncementType;
+    // La fonction retourne maintenant uniquement l'ID, les notifications sont gérées par l'appelant.
+    return docRef.id;
+
   } catch (error) {
     console.error('Erreur lors de la création de l\'annonce:', error);
     throw error;
