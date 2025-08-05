@@ -23,6 +23,7 @@ import {
 import { db, auth } from '@/lib/firebase';
 import { AnnouncementType } from '@/types';
 import { withFirestoreLock, FirestoreOperations } from '@/utils/firestoreLock';
+import { notifyNewAnnouncement, notifyPublishSuccess } from '@/lib/localNotifications';
 
 const COLLECTION_NAME = 'announcements';
 
@@ -76,36 +77,29 @@ export const createAnnouncement = async (announcement: Omit<AnnouncementType, 'i
     // Log pour confirmation de la création
     console.log('[FIRESTORE DEBUG] Annonce créée avec ID:', docRef.id);
     
-    // 🚀 DÉCLENCHER LA NOTIFICATION AUTOMATIQUE
+    // 🚀 NOTIFICATIONS LOCALES DIRECTES (sans serveur)
     try {
-      console.log('[NOTIFICATION] Déclenchement notification pour nouvelle annonce:', docRef.id);
+      console.log('[NOTIFICATION] Déclenchement notifications locales pour nouvelle annonce:', docRef.id);
       
-      const notificationResponse = await fetch('/api/notifications/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': 'internal-api-key' // Clé interne pour l'authentification
-        },
-        body: JSON.stringify({
-          type: 'new_announcement',
-          announcementId: docRef.id,
-          metadata: {
-            createdBy: announcement.userId,
-            from: announcement.from,
-            to: announcement.to,
-            type: announcement.type
-          }
-        })
+      // Notification de succès de publication pour l'utilisateur
+      await notifyPublishSuccess({
+        type: announcement.type,
+        from: announcement.from,
+        to: announcement.to
       });
-
-      if (notificationResponse.ok) {
-        console.log('[NOTIFICATION] Notification envoyée avec succès pour l\'annonce:', docRef.id);
-      } else {
-        const errorText = await notificationResponse.text();
-        console.warn('[NOTIFICATION] Erreur envoi notification:', errorText);
-      }
+      
+      // Notification générale pour informer qu'une nouvelle annonce est disponible
+      await notifyNewAnnouncement({
+        id: docRef.id,
+        type: announcement.type,
+        from: announcement.from,
+        to: announcement.to,
+        userName: announcement.userName || 'Un utilisateur'
+      });
+      
+      console.log('[NOTIFICATION] Notifications locales envoyées avec succès');
     } catch (notificationError) {
-      console.warn('[NOTIFICATION] Erreur lors du déclenchement de la notification:', notificationError);
+      console.warn('[NOTIFICATION] Erreur lors de l\'affichage des notifications locales:', notificationError);
       // Non bloquant - l'annonce est créée même si la notification échoue
     }
     

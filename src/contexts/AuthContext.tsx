@@ -22,6 +22,7 @@ import { withFirestoreLock, FirestoreOperations } from '@/utils/firestoreLock';
 import { UserType } from '@/types';
 import { auth, db } from '@/lib/firebase';
 import { initPushNotifications } from '@/lib/pushNotifications';
+import { initializeLocalNotifications } from '@/lib/localNotifications';
 
 interface AuthContextType {
   currentUser: any | null;
@@ -341,18 +342,40 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 if (userDataLoaded) {
                   console.log('[Auth] Données utilisateur chargées avec succès');
                   
-                  // 🚀 INITIALISER LES NOTIFICATIONS PUSH APRÈS CONNEXION RÉUSSIE
+                  // 🚀 INITIALISER LES NOTIFICATIONS APRÈS CONNEXION RÉUSSIE
                   try {
-                    console.log('[Auth] Initialisation des notifications push...');
-                    const notificationsEnabled = await initPushNotifications(user.uid);
-                    if (notificationsEnabled) {
-                      console.log('[Auth] Notifications push configurées avec succès');
+                    console.log('[Auth] Initialisation des notifications...');
+                    
+                    // 1. Initialiser les notifications locales (client-side uniquement)
+                    let localNotificationsEnabled = false;
+                    try {
+                      localNotificationsEnabled = await initializeLocalNotifications();
+                      if (localNotificationsEnabled) {
+                        console.log('[Auth] Notifications locales activées avec succès');
+                      }
+                    } catch (localError) {
+                      console.warn('[Auth] Erreur lors de l\'initialisation des notifications locales:', localError);
+                    }
+                    
+                    // 2. Optionnel : Initialiser aussi les notifications push traditionnelles
+                    let pushNotificationsEnabled = false;
+                    try {
+                      pushNotificationsEnabled = await initPushNotifications(user.uid);
+                      if (pushNotificationsEnabled) {
+                        console.log('[Auth] Notifications push traditionnelles activées');
+                      }
+                    } catch (pushError) {
+                      console.warn('[Auth] Erreur lors de l\'initialisation des notifications push:', pushError);
+                    }
+                    
+                    // Afficher un message de succès si au moins un type de notification fonctionne
+                    if (localNotificationsEnabled || pushNotificationsEnabled) {
                       toast.success('Notifications activées !', {
                         duration: 2000,
                         icon: '🔔'
                       });
                     } else {
-                      console.warn('[Auth] Les notifications push n\'ont pas pu être configurées');
+                      console.warn('[Auth] Aucun système de notification n\'a pu être configuré');
                     }
                   } catch (notificationError) {
                     console.warn('[Auth] Erreur lors de l\'initialisation des notifications:', notificationError);
