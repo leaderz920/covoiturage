@@ -9,12 +9,26 @@ const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_KEY;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 const VAPID_CONTACT_EMAIL = process.env.VAPID_CONTACT_EMAIL || 'example@example.com';
 
+// Vérifier que les clés VAPID sont valides avant de les configurer
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(
-    `mailto:${VAPID_CONTACT_EMAIL}`,
-    VAPID_PUBLIC_KEY,
-    VAPID_PRIVATE_KEY
-  );
+  try {
+    // Vérifier que la clé privée VAPID a la bonne longueur (32 bytes en base64)
+    const privateKeyBuffer = Buffer.from(VAPID_PRIVATE_KEY, 'base64');
+    if (privateKeyBuffer.length === 32) {
+      webpush.setVapidDetails(
+        `mailto:${VAPID_CONTACT_EMAIL}`,
+        VAPID_PUBLIC_KEY,
+        VAPID_PRIVATE_KEY
+      );
+      console.log('[PUSH] VAPID details configured successfully');
+    } else {
+      console.warn('[PUSH] VAPID private key has invalid length:', privateKeyBuffer.length, 'bytes (expected 32)');
+    }
+  } catch (error) {
+    console.error('[PUSH] Error configuring VAPID details:', error);
+  }
+} else {
+  console.warn('[PUSH] VAPID keys not configured - push notifications may not work properly');
 }
 
 export async function POST(request: Request) {
@@ -34,7 +48,12 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-    const subsSnapshot = await adminDb.collection('subscriptions').get();
+    const db = adminDb();
+    if (!db) {
+      return NextResponse.json({ success: false, error: 'Database not initialized' }, { status: 500 });
+    }
+
+    const subsSnapshot = await db.collection('subscriptions').get();
     console.log('[API] Nombre de souscriptions trouvées:', subsSnapshot.size);
     const sendPromises: Promise<void>[] = [];
     subsSnapshot.forEach(doc => {

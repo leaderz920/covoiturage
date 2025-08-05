@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { adminDb, adminMessaging, initializeFirebaseAdmin } from '../../../../lib/firebaseAdmin';
+import { adminDb, adminMessaging } from '../../../../lib/firebaseAdmin';
 import { MulticastMessage } from 'firebase-admin/messaging';
 
 interface NotificationData {
@@ -12,9 +12,6 @@ interface NotificationData {
 }
 
 export async function POST(request: Request) {
-  // Assurer l'initialisation de Firebase Admin
-  initializeFirebaseAdmin();
-  
   const db = adminDb();
   const messaging = adminMessaging();
 
