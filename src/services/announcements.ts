@@ -78,30 +78,33 @@ export const createAnnouncement = async (announcement: Omit<AnnouncementType, 'i
     console.log('[FIRESTORE DEBUG] Annonce créée avec ID:', docRef.id);
     
     // 🚀 NOTIFICATIONS LOCALES DIRECTES (sans serveur)
-    try {
-      console.log('[NOTIFICATION] Déclenchement notifications locales pour nouvelle annonce:', docRef.id);
-      
-      // Notification de succès de publication pour l'utilisateur
-      await notifyPublishSuccess({
-        type: announcement.type,
-        from: announcement.from,
-        to: announcement.to
-      });
-      
-      // Notification générale pour informer qu'une nouvelle annonce est disponible
-      await notifyNewAnnouncement({
-        id: docRef.id,
-        type: announcement.type,
-        from: announcement.from,
-        to: announcement.to,
-        userName: announcement.userName || 'Un utilisateur'
-      });
-      
-      console.log('[NOTIFICATION] Notifications locales envoyées avec succès');
-    } catch (notificationError) {
-      console.warn('[NOTIFICATION] Erreur lors de l\'affichage des notifications locales:', notificationError);
-      // Non bloquant - l'annonce est créée même si la notification échoue
-    }
+    // Important: les notifications ne doivent jamais bloquer la création d'annonce
+    setTimeout(async () => {
+      try {
+        console.log('[NOTIFICATION] Déclenchement notifications locales pour nouvelle annonce:', docRef.id);
+        
+        // Notification de succès de publication pour l'utilisateur
+        await notifyPublishSuccess({
+          type: announcement.type,
+          from: announcement.from,
+          to: announcement.to
+        });
+        
+        // Notification générale pour informer qu'une nouvelle annonce est disponible
+        await notifyNewAnnouncement({
+          id: docRef.id,
+          type: announcement.type,
+          from: announcement.from,
+          to: announcement.to,
+          userName: announcement.userName || 'Un utilisateur'
+        });
+        
+        console.log('[NOTIFICATION] Notifications locales envoyées avec succès');
+      } catch (notificationError) {
+        console.warn('[NOTIFICATION] Erreur lors de l\'affichage des notifications locales:', notificationError);
+        // Non bloquant - l'annonce est créée même si la notification échoue
+      }
+    }, 100); // Délai de 100ms pour éviter que les notifications bloquent le processus principal
     
     // Mettre à jour les jetons de l'utilisateur
     // Cette opération devrait normalement être effectuée dans une fonction Cloud

@@ -47,7 +47,10 @@ class LocalNotificationService {
     try {
       if (!this.isInitialized) {
         const initialized = await this.initialize();
-        if (!initialized) return false;
+        if (!initialized) {
+          console.warn('[LOCAL_NOTIFICATIONS] Service non initialisé, abandon de la notification');
+          return false;
+        }
       }
 
       const notificationOptions: NotificationOptions = {
@@ -85,20 +88,25 @@ class LocalNotificationService {
       }
 
       // Fallback : notification basique du navigateur
-      const notification = new Notification(options.title, notificationOptions);
-      
-      // Gérer les clics sur la notification
-      notification.onclick = (event) => {
-        event.preventDefault();
-        window.focus();
-        if (options.data?.url) {
-          window.location.href = options.data.url;
-        }
-        notification.close();
-      };
+      try {
+        const notification = new Notification(options.title, notificationOptions);
+        
+        // Gérer les clics sur la notification
+        notification.onclick = (event) => {
+          event.preventDefault();
+          window.focus();
+          if (options.data?.url) {
+            window.location.href = options.data.url;
+          }
+          notification.close();
+        };
 
-      console.log('[LOCAL_NOTIFICATIONS] Notification basique envoyée');
-      return true;
+        console.log('[LOCAL_NOTIFICATIONS] Notification basique envoyée');
+        return true;
+      } catch (notificationError) {
+        console.warn('[LOCAL_NOTIFICATIONS] Impossible d\'envoyer la notification basique:', notificationError);
+        return false;
+      }
 
     } catch (error) {
       console.error('[LOCAL_NOTIFICATIONS] Erreur lors de l\'envoi:', error);
