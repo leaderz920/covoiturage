@@ -24,7 +24,8 @@ export async function POST(request: Request) {
 
   try {
     const notificationData: Partial<NotificationData> = await request.json();
-    const { tokens, title, body, data, type, announcementId } = notificationData;
+    let { tokens } = notificationData;
+    const { title, body, data, type, announcementId } = notificationData;
 
     // Validation des champs requis
     if (!type || !announcementId) {
@@ -35,10 +36,41 @@ export async function POST(request: Request) {
     }
 
     if (!tokens || !Array.isArray(tokens) || tokens.length === 0) {
-      return NextResponse.json(
-        { success: false, message: 'Erreur : Aucun token fourni.' },
-        { status: 400 }
-      );
+      // Si aucun token n'est fourni, récupérer tous les tokens d'abonnement
+      console.log('[NOTIFICATIONS] Aucun token fourni, récupération de tous les abonnements...');
+      
+      try {
+        const subscriptionsSnapshot = await db.collection('subscriptions').get();
+        const allTokens: string[] = [];
+        
+        subscriptionsSnapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.endpoint && data.keys) {
+            // Pour les notifications FCM, nous devons utiliser le token FCM stocké
+            if (data.token) {
+              allTokens.push(data.token);
+            }
+          }
+        });
+        
+        if (allTokens.length === 0) {
+          console.warn('[NOTIFICATIONS] Aucun token d\'abonnement trouvé');
+          return NextResponse.json(
+            { success: false, message: 'Aucun token d\'abonnement trouvé.' },
+            { status: 400 }
+          );
+        }
+        
+        tokens = allTokens;
+        console.log(`[NOTIFICATIONS] ${tokens.length} tokens récupérés automatiquement`);
+        
+      } catch (error) {
+        console.error('[NOTIFICATIONS] Erreur lors de la récupération des abonnements:', error);
+        return NextResponse.json(
+          { success: false, message: 'Erreur lors de la récupération des abonnements.' },
+          { status: 500 }
+        );
+      }
     }
 
     const message: MulticastMessage = {
